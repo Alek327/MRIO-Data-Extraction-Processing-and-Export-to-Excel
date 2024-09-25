@@ -1,0 +1,97 @@
+# Load MRIO Data and Extract Key Matrices by Region
+
+# 1. Load the MRIO data
+load("~/Desktop/MRIO.RData")
+
+# 2. Extract Input-Output Tables (IOT) for 5 Regions (NW, NE, Toscana, Centro, Sud)
+IOT <- mrio_data$IOT  # Assign the IOT array from the MRIO data
+regions <- c("NW", "NE", "Toscana", "Centro", "Sud")  # Define region names
+IOT_regions <- list()  # Initialize a list to store the 49x52 matrices for each region
+
+# Loop through each region and extract the corresponding 49x52 matrix
+for (i in 1:5) {
+  IOT_regions[[regions[i]]] <- IOT[, , i]
+}
+
+# 3. Assign matrices for each region for easier access
+IOT_NW <- IOT_regions$NW
+IOT_Toscana <- IOT_regions$Toscana
+IOT_NE <- IOT_regions$NE
+IOT_Centro <- IOT_regions$Centro
+IOT_Sud <- IOT_regions$Sud
+
+# Save the extracted IOT data for future use
+save.image("~/MRIO (IOT).RData")
+
+# 4. Process Trade Data for Intermediate and Final Demand (5x5x43 Arrays)
+
+# Extract intermediate trade data
+trade_intermedio <- mrio_data$trade_intermedio  # Assign the intermediate trade array
+# Create an empty matrix (215x5) to store stacked trade data
+trade_intermedio_matrix <- matrix(0, nrow = 215, ncol = 5)
+
+# Stack the 43 sectors from each of the 5 origin regions
+for (origin_region in 1:5) {
+  start_row <- (origin_region - 1) * 43 + 1
+  end_row <- origin_region * 43
+  trade_intermedio_matrix[start_row:end_row, ] <- trade_intermedio[origin_region, , ]
+}
+
+# Extract final demand trade data
+trade_finale <- mrio_data$trade_finale  # Assign the final trade array
+trade_finale_matrix <- matrix(0, nrow = 215, ncol = 5)
+
+# Stack the 43 sectors from each of the 5 origin regions
+for (origin_region in 1:5) {
+  start_row <- (origin_region - 1) * 43 + 1
+  end_row <- origin_region * 43
+  trade_finale_matrix[start_row:end_row, ] <- trade_finale[origin_region, , ]
+}
+
+# 5. Validate the dimensions and inspect the data
+dim(trade_intermedio_matrix)  # Should return 215x5
+dim(trade_finale_matrix)  # Should return 215x5
+
+# Display the first few rows of the matrices
+head(trade_intermedio_matrix)
+head(trade_finale_matrix)
+
+# View the IOT matrix for the NE region
+View(IOT_NE)
+
+# Save the processed trade and IOT data for future use
+save.image("~/MRIO (ALL).RData")
+
+# 6. Export All Matrices to Excel
+
+# Install the writexl package if needed
+install.packages("writexl")
+library(writexl)
+
+# Combine all matrices into a list with appropriate sheet names
+all_matrices <- list(
+  Trade_Intermedio = trade_intermedio_matrix,
+  Trade_Finale = trade_finale_matrix,
+  IOT_NW = IOT_NW,
+  IOT_NE = IOT_NE,
+  IOT_Toscana = IOT_Toscana,
+  IOT_Centro = IOT_Centro,
+  IOT_Sud = IOT_Sud
+)
+
+# Export all matrices to a single Excel file
+write_xlsx(all_matrices, path = "all_matrices.xlsx")
+
+# Convert matrices to data frames for better readability in Excel
+all_matrices <- list(
+  Trade_Intermedio = as.data.frame(trade_intermedio_matrix),
+  Trade_Finale = as.data.frame(trade_finale_matrix),
+  IOT_NW = as.data.frame(IOT_NW),
+  IOT_NE = as.data.frame(IOT_NE),
+  IOT_Toscana = as.data.frame(IOT_Toscana),
+  IOT_Centro = as.data.frame(IOT_Centro),
+  IOT_Sud = as.data.frame(IOT_Sud)
+)
+
+# Export the data frames to Excel
+write_xlsx(all_matrices, path = "all_matrices.xlsx")
